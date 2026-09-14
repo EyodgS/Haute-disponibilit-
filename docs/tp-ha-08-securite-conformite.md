@@ -1,4 +1,4 @@
-# Sécurité et conformité
+# TP-HA-08 — Sécurité et conformité
 
 ## Contrôles techniques appliqués
 
@@ -9,8 +9,9 @@
 - Accès SSH restreint au réseau d'administration
 - Journalisation de base activée côté services et système
 
-## Conformité TP
+## Alignement NIS2 / RGPD (niveau TP)
 
 - Continuité de service validée par tests de bascule
-- Mesure RTO/RPO documentée dans `mesures/` et `pv/`
-- Procédure d'incident formalisée dans `incidents/`
+- Mesure RTO/RPO documentée dans `mesures/`
+- Procédure d'incident formalisée dans `docs/tp-ha-05-pv-incidents.md`
+- Procédures d’exploitation documentées dans `docs/tp-ha-06-exploitation.md`
