@@ -1,0 +1,32 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Local secrets / env
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+
+# Virtualization local artifacts
+.vagrant/
+*.vdi
+*.vbox
+*.vbox-prev
+
+# Tooling cache
+coverage/
+node_modules/
+__pycache__/
+*.pyc

@@ -1,4 +1,4 @@
-# Analyse des SPOF résiduels
+# TP-HA-07 — Analyse des SPOF résiduels
 
 ## SPOF identifiés
 
