@@ -1,38 +1,22 @@
-# Architecture Haute Disponibilité — NovaSanté
+# Architecture cible TP
 
-## 1. Vue d’ensemble
+## Objectif
 
-Objectif : assurer la continuité de service du portail de rendez-vous médicaux.
+Fournir une plateforme web tolérante aux pannes avec bascule automatique des load balancers.
 
-Architecture implémentée :
+## Topologie
 
-- Point d’entrée unique : Nginx
-- Deux nœuds applicatifs actifs simultanément
-- Base PostgreSQL centralisée
-- Redis pour externaliser l’état applicatif
+- 2 load balancers (`LB1`, `LB2`) en redondance VRRP (Keepalived)
+- 2 serveurs web (`WEB1`, `WEB2`) derrière HAProxy
+- 1 poste `CLIENT` pour les vérifications
 
-## 2. Composants et rôles
+Flux principal :
 
-- **Nginx** : équilibrage, détection indirecte des pannes applicatives, bascule transparente
-- **App1/App2** : service métier redondé
-- **PostgreSQL** : persistance des rendez-vous
-- **Redis** : base d’extension pour sessions/caches partagés
+`CLIENT -> VIP 192.168.10.100 -> HAProxy (LB actif) -> WEB1/WEB2`
 
-## 3. Mécanismes HA présents
+## Technologies imposées
 
-- Multiplication des instances applicatives
-- Politique de redémarrage automatique des conteneurs
-- Healthchecks sur chaque composant clé
-- Distribution de charge `least_conn`
-- Retry upstream côté proxy
-
-## 4. Limites et trajectoire cible
-
-Limite actuelle : base de données en nœud unique.
-
-Trajectoire cible recommandée :
-
-- PostgreSQL HA (Patroni + etcd/Consul + réplication)
-- Virtual IP (Keepalived) pour supprimer le SPOF du point d’entrée
-- TLS mutuel inter-services pour durcir les flux est-ouest
-- Multi-zone / multi-hôte pour résilience infra
+- **HAProxy** : répartition de charge HTTP
+- **Keepalived (VRRP)** : bascule LB1/LB2 avec VIP
+- **nginx + php-fpm** : service web sur WEB1/WEB2
+- **nftables** : filtrage réseau sur chaque VM

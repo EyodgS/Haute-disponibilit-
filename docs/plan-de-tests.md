@@ -1,30 +1,7 @@
-# Plan de tests — Haute Disponibilité
+# Plan de tests
 
-## Scénario 1 : disponibilité nominale
-
-- Vérifier `/`, `/health`, `/appointments`
-- Résultat attendu : HTTP 200
-
-## Scénario 2 : panne d’un nœud applicatif
-
-- Stopper `app1`
-- Tester `http://localhost:8080/`
-- Résultat attendu : service toujours disponible via `app2`
-
-## Scénario 3 : reprise nœud applicatif
-
-- Redémarrer `app1`
-- Vérifier les logs et l’état healthy
-- Résultat attendu : retour à la redondance nominale
-
-## Scénario 4 : indisponibilité base de données
-
-- Stopper `db`
-- Tester `/health`
-- Résultat attendu : code 503 (mode dégradé détecté)
-
-## Scénario 5 : restauration données
-
-- Exécuter une sauvegarde
-- Simuler perte de données contrôlée
-- Restaurer puis vérifier cohérence des rendez-vous
+1. **Disponibilité nominale**: requêtes HTTP continues vers `192.168.10.100`
+2. **Panne LB actif**: arrêt Keepalived/HAProxy sur LB1, attente bascule LB2
+3. **Panne WEB1**: arrêt nginx/php-fpm sur WEB1, vérification continuité via WEB2
+4. **Retour nominal**: redémarrage des services et vérification de l'état cluster
+5. **Mesures**: calcul RTO/RPO, taux de disponibilité, latence moyenne
