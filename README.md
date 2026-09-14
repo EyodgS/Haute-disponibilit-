@@ -1,85 +1,46 @@
-# TP Haute Disponibilité — NovaSanté
+# TP Haute Disponibilité — VirtualBox
 
-Projet complet de TP (16h) pour concevoir, déployer et documenter une plateforme web de prise de rendez-vous médicaux avec des exigences de **haute disponibilité**, de **sécurité**, et de **conformité NIS2/RGPD**.
+Ce dépôt est aligné avec le TP imposant une architecture **VirtualBox à 5 VM**:
 
-## 1) Objectifs
+- `LB1` et `LB2` : HAProxy + Keepalived + nftables
+- `WEB1` et `WEB2` : nginx + php-fpm + nftables
+- `CLIENT` : scripts de validation
 
-- Mettre en place une architecture web tolérante aux pannes
-- Garantir la continuité de service applicative (reverse proxy + plusieurs nœuds applicatifs)
-- Centraliser la donnée dans une base PostgreSQL
-- Proposer un cadre d’exploitation (supervision, sauvegarde, PRA/PCA)
-- Documenter les mesures de sécurité et de conformité
+## Arborescence
 
-## 2) Architecture livrée
+- `configs/` : configurations par VM
+- `scripts/` : scripts d'exploitation et de validation
+- `mesures/` : mesures brutes (CSV)
+- `pv/` : procès-verbaux de tests
+- `incidents/` : PV d'incidents (phase 7)
+- `exploitation/` : procédures d'exploitation
+- `docs/` : architecture, plan d'adressage, sécurité
 
-Cette version implémente une HA **active/active** sur la couche web/applicative :
+## Plan d'adressage
 
-- **Nginx** : point d’entrée et équilibrage de charge
-- **2 instances applicatives Flask** : `app1`, `app2`
-- **PostgreSQL** : stockage métier
-- **Redis** : cache/sessions (prévu pour extension)
+- Réseau clients/LB : `192.168.10.0/24`
+- Réseau LB/WEB : `192.168.20.0/24`
+- Réseau VRRP/cluster : `10.99.99.0/24`
 
-Schéma logique :
+### IP par rôle
 
-Client → Nginx (LB) → App1/App2 → PostgreSQL
+- `LB1` : `192.168.10.11`, `192.168.20.11`, `10.99.99.11`
+- `LB2` : `192.168.10.12`, `192.168.20.12`, `10.99.99.12`
+- `WEB1` : `192.168.20.21`
+- `WEB2` : `192.168.20.22`
+- `CLIENT` : `192.168.10.31`
 
-## 3) Arborescence
+### VIP
 
-- `docker-compose.yml` : orchestration de la plateforme
-- `app/` : application web de démonstration
-- `infra/nginx/nginx.conf` : configuration load balancing + health
-- `infra/db/init.sql` : création de schéma et données de base
-- `docs/architecture.md` : architecture et choix techniques
-- `docs/securite-conformite.md` : NIS2/RGPD et mesures associées
-- `docs/exploitation.md` : exploitation, sauvegarde, PRA/PCA
-- `docs/plan-de-tests.md` : plan de tests HA
-- `scripts/smoke_test.sh` : test de disponibilité et bascule
+- VIP client : `192.168.10.100`
+- VIP web : `192.168.20.100`
 
-## 4) Prérequis
+## Vérification rapide
 
-- Docker + Docker Compose
-- Port TCP `8080` libre
-
-## 5) Démarrage rapide
+Depuis `CLIENT`:
 
 ```bash
-docker compose up -d --build
+bash scripts/check-dispo.sh http://192.168.10.100 60 2
 ```
 
-Accès application :
-
-- [http://localhost:8080](http://localhost:8080)
-- Health check applicatif : [http://localhost:8080/health](http://localhost:8080/health)
-
-Arrêt :
-
-```bash
-docker compose down
-```
-
-## 6) Vérification fonctionnelle
-
-```bash
-bash scripts/smoke_test.sh
-```
-
-Le script vérifie :
-- disponibilité HTTP,
-- endpoint de santé,
-- continuité de service même si une instance applicative tombe.
-
-## 7) Étapes TP recommandées
-
-1. Déployer la stack
-2. Vérifier la répartition de charge
-3. Simuler la panne d’un nœud applicatif
-4. Valider la continuité de service
-5. Appliquer les mesures sécurité/conformité documentées
-6. Produire les preuves (captures, logs, tests)
-
-## 8) Limites de cette version
-
-- Base de données en instance unique (la HA DB est documentée en trajectoire cible)
-- Chiffrement TLS non activé par défaut en local (à activer en environnement d’intégration/production)
-
-Voir `docs/architecture.md` pour les évolutions (Patroni/Keepalived, etc.).
+Les mesures sont enregistrées dans `mesures/disponibilite.csv` et `mesures/latence.csv`.
