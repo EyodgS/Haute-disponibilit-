@@ -1,0 +1,6 @@
+[Unit]
+Description=Rsync /var/www/data vers WEB2
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rsync -avz --delete -e 'ssh -i /root/.ssh/id_repl -o StrictHostKeyChecking=no' /var/www/data/ root@10.99.99.22:/

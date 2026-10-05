@@ -1,0 +1,10 @@
+[Unit]
+Description=Rsync /var/www/data toutes les minutes
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

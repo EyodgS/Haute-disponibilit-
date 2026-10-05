@@ -21,6 +21,21 @@ Flux principal:
 - **nginx + php-fpm** : service web sur WEB1/WEB2
 - **nftables** : filtrage réseau sur chaque VM
 
+---
+
+## 📝 Étape 3 — Vérifier qu'aucun secret ne traîne
+
+**Copie-colle :**
+
+```bash
+cd ~/Documents/BAIS/HAPROX/Haute-Dispo_Etudiants/Haute-disponibilit-
+
+echo "=== Vérif secrets ==="
+grep -rE "Erosyca|novasant" configs/ mesures/ docs/ 2>/dev/null | grep -v "GESTIONNAIRE" || echo "AUCUN SECRET ✅"
+
+echo ""
+echo "=== Contenu de mesures/ ==="
+ls mesures/
 ## Phase 4 — Gestion des sessions utilisateur
 
 ### Comparatif des 3 solutions
