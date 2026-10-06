@@ -135,3 +135,29 @@ Mais il refuse AUSSI d'exécuter le script périodiquement, même quand on le pl
 
 **2/3 scénarios validés.** Cette limite est un vrai apprentissage d'admin sys : identifier les limites d'un outil et proposer des alternatives.
 
+
+---
+
+## INC-02 — Mort de HAProxy sur LB1 (limite documentée)
+
+| Champ | Valeur |
+|---|---|
+| **Identifiant** | INC-02 |
+| **Horodatage de détection** | 2026-10-06 13:20:01 |
+| **Symptôme observé** | HAProxy arrêté sur LB1, mais LB1 garde la VIP pendant plus de 90 secondes. Le service devient HS (502). |
+| **Impact mesuré** | Service indisponible jusqu'à redémarrage manuel de HAProxy. |
+| **Diagnostic** | 1. `journalctl -u keepalived` : `(VI_LAN) ignoring tracked script chk_haproxy with weights due to SYNC group`<br>2. `Warning - script chk_haproxy is not used`<br>3. Le script n'est appelé qu'une seule fois au démarrage |
+| **Cause racine** | **Bug connu de Keepalived 2.2.x** (Debian 12) : un `vrrp_script` avec `weight` est ignoré quand il est utilisé dans un `vrrp_sync_group`. |
+| **Remédiation appliquée** | Non résolu. Solutions proposées : watchdog externe (timer systemd), mise à jour Keepalived 2.3.x, ou instances VRRP indépendantes. |
+| **Action préventive** | Documenter les limites de Keepalived et prévoir un watchdog externe en production |
+
+### Impact sur le TP
+
+| Scénario de panne | Statut |
+|---|---|
+| Arrêt propre keepalived | ✅ Validé (Phase 3) |
+| Coupure brutale (poweroff LB1) | ✅ Validé (Phase 3) |
+| Mort de HAProxy (processus) | ❌ Bug Keepalived — documenté |
+
+**2/3 scénarios validés.**
+
