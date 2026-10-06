@@ -157,3 +157,54 @@ Fichiers :
 - `mesures/vrrp-transitions-lb2.log`
 
 **Extrait LB2 :**
+---
+
+## Point de contrôle 6 — Durcissement (partiel)
+
+### Résultats validés
+
+| Test | Méthode | Résultat | Conforme ? |
+|---|---|---|---|
+| nftables policy drop | `nft list ruleset \| grep policy` | drop sur input + forward | ✅ |
+| VRRP à travers nftables | `tcpdump -ni enp0s8 vrrp` | 3 paquets captés | ✅ |
+| Masquerade NAT sur LB | `nft list table inet nat` | masquerade sur enp0s3 | ✅ |
+| Passerelle redondante | Ping 8.8.8.8 via VIP (ttl=62) | 2 sauts détectés | ✅ |
+| Bascule passerelle | Arrêt LB1 → LB2 prend les VIP | Service continue | ✅ |
+| TLS AC interne | `curl https://portail.novasanta.lan/` | 200 OK sans -k | ✅ |
+| En-têtes sécurité | HSTS + X-Content-Type + X-Frame | Présents | ✅ |
+| Bascule HTTPS | Arrêt LB1 → LB2 répond en HTTPS | 200 OK | ✅ |
+| SSH root refusé | `ssh -p 2221 root@localhost` | Permission denied | ✅ |
+| SSH admin OK + sudo | `ssh admin@... sudo -n whoami` | root | ✅ |
+
+### Limite assumée — Centralisation rsyslog
+
+**Objectif :** centraliser les logs des 4 serveurs vers LB1 pour reconstituer la chronologie après bascule.
+
+**Ce qui fonctionne :**
+- rsyslog installé sur les 4 VM
+- LB1 écoute sur `10.99.99.11:514` (TCP)
+- Les clients envoient bien (tcpdump confirme les paquets TCP avec données)
+- nftables autorise le port 514 depuis HA-SYNC
+
+**Ce qui ne fonctionne pas :**
+- rsyslog sur LB1 ne crée pas les fichiers `/var/log/remote/*.log`
+- Le filtrage des messages distants par `imtcp` + `ruleset` ou template dynamique échoue
+- Test `logger -n` direct : échec de connexion malgré tcpdump qui voit les paquets
+
+**Diagnostic :**
+- Le `syslog.socket` de systemd interfère avec `imtcp` sur le port 514
+- La config `imtcp` + template dynamique n'est pas correctement interprétée par rsyslog 8.2302 (Debian 12)
+- Piste : utiliser `imudp` au lieu de `imtcp`, ou une version plus récente de rsyslog
+
+**Remédiation proposée (non implémentée par manque de temps) :**
+1. Désactiver définitivement `syslog.socket` et `systemd-journald` en mode socket
+2. Tester avec `imudp` (UDP 514) au lieu de `imtcp`
+3. Ou utiliser un collecteur alternatif (Promtail, Filebeat, Fluentd)
+
+**Impact :**
+- La traçabilité reste locale à chaque VM
+- Après bascule, on peut reconstituer la chronologie en interrogeant les 4 VM séparément
+- **La haute disponibilité n'est PAS affectée** (les logs sont un besoin de traçabilité, pas de service)
+
+**En production :** la centralisation serait implémentée avec un collecteur dédié (Promtail + Loki, ou Filebeat + Elasticsearch) qui gère nativement l'agrégation multi-sources.
+
