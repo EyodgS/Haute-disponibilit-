@@ -37,3 +37,18 @@
 | F4 | LB1 `10.99.99.11` | LB2 `10.99.99.12` | VRRP (proto 112) | Bidirectionnel | Élection MASTER/BACKUP | Keepalived + filtrage protocolaire |
 | F5 | Admin | LB1/LB2/WEB1/WEB2 | TCP/22 | Entrant admin | Administration distante | Restriction SSH + journalisation |
 | F6 | LB1/LB2 | VIP `192.168.10.100` et `192.168.20.100` | VRRP/IP | Local hôte | Portage VIP actif/passif | Keepalived priorité/healthchecks |
+
+### Flux complémentaires
+
+| ID | Source | Destination | Port/Proto | Sens | Finalité | Contrôle de sécurité |
+|---|---|---|---|---|---|---|
+| F7 | WEB1/WEB2 | Internet | TCP/80, 443 | Sortant | Mises à jour système (apt) | Masquerade via VIP DMZ + nftables |
+| F8 | Toutes les VM | Serveur NTP | UDP/123 | Sortant | Synchronisation horloge (chrony) | Autorisé en sortie uniquement |
+| F9 | HA-SYNC | Toutes les VM | ICMP echo | Entrant | Diagnostic administrateur | Limité au réseau d'admin |
+| F10 | WEB1 | WEB2 (HA-SYNC) | TCP/22 | Sortant | Réplication rsync/SSH | Clé SSH dédiée + rrsync restreint |
+
+### Principe de filtrage
+
+Chaque flux ci-dessus doit être **autorisé explicitement** dans nftables. Tout flux non listé est **bloqué par défaut** (politique `drop` sur les chaines `input` et `forward`).
+
+**Point critique :** le protocole VRRP (112) doit être autorisé entre LB1 et LB2 sur HA-LAN et HA-DMZ, **sinon split-brain** (les deux LB se croient MASTER).
